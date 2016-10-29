@@ -1,0 +1,24 @@
+{
+  "name": "client-sample",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sample.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ycgame/pvp-sample.git"
+  },
+  "author": "Taichiro Suzuki",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ycgame/pvp-sample/issues"
+  },
+  "homepage": "https://github.com/ycgame/pvp-sample#readme",
+  "dependencies": {
+    "date-utils": "^1.2.21",
+    "request": "^2.75.0",
+    "websocket": "^1.0.23"
+  }
+}
