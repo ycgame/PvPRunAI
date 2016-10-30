@@ -5,7 +5,7 @@ Ai = function(id){
 
     this.request = require('request');
     this.options = {
-	url: 'http://localhost:3000/ais/'+id,
+	url: 'http://localhost:3000/ais/'+id+'?aitoken='+process.env.AI_TOKEN,
 	method: 'GET',
 	json: true
     }
@@ -51,15 +51,18 @@ Ai = function(id){
 
 		if(msg['match']){
 
-		    date = new Date();
-
 		    console.log(' -> マッチ相手が見つかりました！');
 		    console.log(' -> ステージ: '+msg['stage']);
+
+		    console.log(' -> 相手の情報');
+		    console.log('    名前: '+msg['matched']['name']);
+		    console.log('    レート: '+msg['matched']['rate']);
 
 		    _this.gaming = true;
 
 		    _this.stage = msg['stage'];
 		    _this.stepCount = 0;
+		    //ステップ開始
 		    _this.step();
 
 		}else{
@@ -73,11 +76,14 @@ Ai = function(id){
 		_this.gaming = false;
 
 		console.log('ゲーム終了！');
+
 		if(msg['fin']){
 		    console.log('勝利！');
 		}else{
 		    console.log('敗北...');
 		}
+
+		console.log('レートが'+msg['user']['rate']+'になった');
 	    }
 	});
 
@@ -110,14 +116,13 @@ Ai.prototype._match = function(){
 
     data = {};
     data['action'] = 'match';
-    data['id'] = this.id;
-    data['token'] = 'aaa';
+    data['id'] = this.user['id'];
+    data['token'] = this.user['token'];
 
     command = {};
     command['command'] = 'message';
     command['identifier'] = this._channel();
     command['data'] = JSON.stringify(data);
-
     return JSON.stringify(command);
 }
 
@@ -137,35 +142,38 @@ Ai.prototype._step = function(i){
 Ai.prototype.step = function(){
 
     var _this = this;
-    
-    if(this.stage.length == this.stepCount || !this.gaming){
-	console.log('Finish!');
-	return;
-    }
 
-    interval_range = this.max_interval - this.min_interval; 
+    interval_range = _this.max_interval - _this.min_interval; 
     
     // ステップのインターバル
-    interval = Math.random() * interval_range + this.min_interval;
-
-    console.log('自分 ('+this.stepCount+') -> '+this.stage[this.stepCount]);
-
-    if(this.correct_rate > Math.random()){
-	// 正しいステップを送信
-	this.conn.sendUTF(this._step(this.stage[this.stepCount]));
-    }else{
-	//間違ったステップを送信
-	console.log('失敗ステップ！');
-	this.conn.sendUTF(this._step(
-	    (this.stage[this.stepCount]+1)%4
-	));
-    }
-    
-    // 一歩すすめる
-    this.stepCount ++;
+    interval = Math.random() * interval_range + _this.min_interval;
     
     setTimeout(function(){
+
+	if(_this.stage.length == _this.stepCount || !_this.gaming){
+	    console.log('Finish!');
+	    process.exit();
+	    return;
+	}
+
+	console.log('自分 ('+_this.stepCount+') -> '+_this.stage[_this.stepCount]);
+
+	if(_this.correct_rate > Math.random()){
+	    // 正しいステップを送信
+	    _this.conn.sendUTF(_this._step(_this.stage[_this.stepCount]));
+	}else{
+	    //間違ったステップを送信
+	    console.log('失敗ステップ！');
+	    _this.conn.sendUTF(_this._step(
+		(_this.stage[_this.stepCount]+1)%4
+	    ));
+	}
+	
+	// 一歩すすめる
+	_this.stepCount ++;
+
 	_this.step();
+
     }, interval * 1000);
 }
 
@@ -180,10 +188,14 @@ Ai.prototype.run = function(){
 	_this.max_interval = body['max_interval'];
 	_this.correct_rate = body['correct_rate'];
 
-	console.log('Min interval: '+_this.min_interval);
-	console.log('Max interval: '+_this.max_interval);
-	console.log('Correct rate: '+_this.correct_rate);
-
+	_this.user = body['user'];
+	
+	console.log(' -- AI モード -- ');
+	console.log(' + 名前 '+_this.user['name']);
+	console.log(' + トークン '+_this.user['token']);
+	console.log(' + レート '+_this.user['rate']);
+	console.log(' -- ------- -- ');
+	
 	_this.client.connect('ws://localhost:3000/cable');
     })
 }
