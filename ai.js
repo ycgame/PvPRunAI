@@ -1,20 +1,16 @@
 
-Ai = function(id){
+Ai = function(_data){
+
+    var data = JSON.parse(_data);
     
     var WebSocket = require('websocket').client;
 
-    this.request = require('request');
-    this.options = {
-	url: 'http://localhost:3000/ais/'+id+'?aitoken='+process.env.AI_TOKEN,
-	method: 'GET',
-	json: true
-    }
+    this.min_interval = data['min_interval'];
+    this.max_interval = data['max_interval'];
+    this.correct_rate = data['correct_rate'];
+    this.user = data['user'];
 
     var _this = this;
-
-    // id を引数から読み込む
-    // e.g. node command 3 (id == 3)
-    this.id = id;
 
     this.client = new WebSocket();
 
@@ -152,7 +148,7 @@ Ai.prototype.step = function(){
 
 	if(_this.stage.length == _this.stepCount || !_this.gaming){
 	    console.log('Finish!');
-	    process.exit();
+	    // process.exit();
 	    return;
 	}
 
@@ -178,26 +174,7 @@ Ai.prototype.step = function(){
 }
 
 Ai.prototype.run = function(){
-
-    var _this = this;
-
-    //AIのステータス取得
-    this.request(this.options, function(error, response, body){
-
-	_this.min_interval = body['min_interval'];
-	_this.max_interval = body['max_interval'];
-	_this.correct_rate = body['correct_rate'];
-
-	_this.user = body['user'];
-	
-	console.log(' -- AI モード -- ');
-	console.log(' + 名前 '+_this.user['name']);
-	console.log(' + トークン '+_this.user['token']);
-	console.log(' + レート '+_this.user['rate']);
-	console.log(' -- ------- -- ');
-	
-	_this.client.connect('ws://localhost:3000/cable');
-    })
+    this.client.connect('ws://localhost:3000/cable');
 }
 
 module.exports = Ai;
