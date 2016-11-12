@@ -22,7 +22,7 @@ app.post("/request", function(req, res){
 	ai.run();
     }
 
-    res.end('OK');
+    res.end('');
 });
 
 app.get("/status", function(req, res){

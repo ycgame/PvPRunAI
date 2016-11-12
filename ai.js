@@ -15,7 +15,7 @@ Ai = function(_data){
     this.client = new WebSocket();
 
     this.client.on('connectFailed', function(err){
-	console.log(' * 接続失敗 * ');
+	console.log('接続失敗...');
     });
 
     // 接続処理
@@ -30,7 +30,13 @@ Ai = function(_data){
 	    data = JSON.parse(_msg.utf8Data);
 	    msg  = data['message'];
 
-	    if('auth' in Object(msg)){
+	    if(!('type' in Object(msg))){
+		return;
+	    }
+
+	    type = msg['type'];
+
+	    if(type == 'auth'){
 		// 認証系
 
 		console.log('認証情報');
@@ -40,34 +46,31 @@ Ai = function(_data){
 		}else{
 		    console.log(' -> 認証失敗');
 		}
-	    }else if('match' in Object(msg)){
+	    }else if(type == 'match'){
 		// マッチ
 
 		console.log('マッチ情報');
 
-		if(msg['match']){
+		console.log(' -> マッチ相手が見つかりました！');
+		console.log(' -> ステージ: '+msg['stage']);
 
-		    console.log(' -> マッチ相手が見つかりました！');
-		    console.log(' -> ステージ: '+msg['stage']);
+		console.log(' -> 相手の情報');
+		console.log('    名前: '+msg['matched']['name']);
+		console.log('    レート: '+msg['matched']['rate']);
 
-		    console.log(' -> 相手の情報');
-		    console.log('    名前: '+msg['matched']['name']);
-		    console.log('    レート: '+msg['matched']['rate']);
+		_this.gaming = true;
 
-		    _this.gaming = true;
-
-		    _this.stage = msg['stage'];
-		    _this.stepCount = 0;
-		    //ステップ開始
+		_this.stage = msg['stage'];
+		_this.stepCount = 0;
+		//3.1秒後にステップ開始
+		setTimeout(function(){
 		    _this.step();
-
-		}else{
-		    console.log(' -> マッチ相手が見つかりませんでした');
-		}
-	    }else if('step' in Object(msg)){
+		}, 3100);
+		
+	    }else if(type == 'step'){
 		// ステップ
 		console.log('相手 ('+msg['step_count']+') -> '+msg['step']);
-	    }else if('fin' in Object(msg)){
+	    }else if(type == 'fin'){
 		// ゲーム終了
 		_this.gaming = false;
 
@@ -83,14 +86,17 @@ Ai = function(_data){
 	    }
 	});
 
-	// 購読
-	_this.conn.sendUTF(_this._subscribe());
-
-	// マッチング要求
 	setTimeout(function(){
-	    console.log('マッチ待機中...');
-	    _this.conn.sendUTF(_this._match());
-	}, 500);
+
+	    // 購読
+	    _this.conn.sendUTF(_this._subscribe());
+
+	    // マッチング要求
+	    setTimeout(function(){
+		console.log('マッチ待機中...');
+		_this.conn.sendUTF(_this._match());
+	    }, 300);
+	}, 300);
     });
 
 }
